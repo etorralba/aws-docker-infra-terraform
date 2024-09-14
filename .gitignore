@@ -2,6 +2,14 @@
 .env
 .env*
 
+# IntelliJ IDEA specific files
+.idea/
+*.iml
+*.iws
+
+# VS Code specific files
+.vscode/
+
 # Local .terraform directories
 **/.terraform/*
 
@@ -43,9 +51,6 @@ terraform.rc
 # Compiled class file
 *.class
 
-# Log file
-*.log
-
 # BlueJ files
 *.ctxt
 
@@ -53,6 +58,7 @@ terraform.rc
 .mtj.tmp/
 
 # Package Files #
+*.deb
 *.jar
 *.war
 *.nar
@@ -65,3 +71,61 @@ terraform.rc
 hs_err_pid*
 replay_pid*
 
+# Maven specific files
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Eclipse specific files
+.classpath
+.project
+.settings/
+
+# NetBeans specific files
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+*.nb-gradle/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# .NET Core generated files and folders
+bin/
+obj/
+
+
+# Build directories
+!build/
+!publish/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userprefs
+
+# Dotnet user-secrets
+**/secrets.json
+
+# Local test, build, coverage results
+TestResults/
+coverage/
+
+# Other files related to the OS or environment
+*.db
