@@ -51,3 +51,9 @@ docker-clean:
 
 docker-prune:
 	docker system prune --all --volumes --force
+
+build-java-netcore:
+	docker-compose up build-java-netcore
+
+run-server:
+	docker-compose up run-server
