@@ -75,3 +75,6 @@ terraform-apply:
 
 terraform-output:
 	@make run script="output.sh ${LAYER} ${ORGANIZATION}"
+
+terraform-destroy:
+	@make run script="destroy.sh ${LAYER} ${ORGANIZATION}"
