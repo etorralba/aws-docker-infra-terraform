@@ -57,3 +57,21 @@ build-java-netcore:
 
 run-server:
 	docker-compose up run-server
+
+run:
+	AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID} \
+	AWS_REGION=${AWS_REGION} \
+	AWS_PROFILE=${AWS_PROFILE} \
+	./scripts/$(script)
+
+terraform-init:
+	@make run script="init.sh ${LAYER} ${ORGANIZATION}"
+
+terraform-plan:
+	@make run script="plan.sh ${LAYER} ${ORGANIZATION}"
+
+terraform-apply:
+	@make run script="apply.sh ${LAYER} ${ORGANIZATION}"
+
+terraform-output:
+	@make run script="output.sh ${LAYER} ${ORGANIZATION}"
