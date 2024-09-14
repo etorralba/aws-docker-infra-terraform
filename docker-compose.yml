@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  build-java-netcore:
+    build:
+      context: .
+      target: build-stage
+    container_name: java-netcore-build
+    command: /bin/bash -c "cd /java-app && mvn clean install && \
+                           cd /net-core-app && dotnet build"
+    volumes:
+      - ./java-app:/java-app
+      - ./net-core-app:/net-core-app
+
+  run-server:
+    build:
+      context: .
+      target: runtime-stage
+    container_name: apache-server
+    ports:
+      - "8080:80"
+    depends_on:
+      - build-java-netcore
