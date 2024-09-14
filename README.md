@@ -5,3 +5,12 @@ AWS infrastructure project using Terraform and Docker. Includes a Linux-based co
 - Java JDK 17
 - Maven 3.9.9
 - Dotnet Core SDK 8.0.401
+- Docker
+
+## Setup
+1. Clone the repository
+
+2. Create a `.env` file in the root directory with the following environment variables:
+```
+IMAGE_VERSION=latest
+```
