@@ -27,6 +27,13 @@ resource "aws_iam_role" "ecs_instance_role" {
         Principal = {
           Service = "ecs.amazonaws.com"
         }
+      },
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
       }
     ]
   })
@@ -34,6 +41,10 @@ resource "aws_iam_role" "ecs_instance_role" {
 resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
   role       = aws_iam_role.ecs_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 resource "aws_iam_role_policy_attachment" "ecs_cloudwatch_policy" {
   role       = aws_iam_role.ecs_instance_role.name
@@ -46,42 +57,14 @@ resource "aws_ecs_cluster" "ecs_cluster" {
   tags = local.tags
 }
 
-
-# IAM Role for ECS Task
-resource "aws_iam_role" "ecs_task_role" {
-  name = "${var.main_organization}-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-resource "aws_iam_role_policy_attachment" "ecs_task_cloudwatch_policy" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-}
-
 resource "aws_ecs_task_definition" "task" {
   family                   = "${var.main_organization}-ecs-task"
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
 
   container_definitions = jsonencode([{
-    name  = local.container_name
-    image = "nginx:latest"
-    # image     = "${aws_ecr_repository.repo.repository_url}:latest"
+    name      = local.container_name
+    image     = "${aws_ecr_repository.repo.repository_url}:latest"
     essential = true
     memory    = 512
     cpu       = 256
@@ -101,7 +84,7 @@ resource "aws_ecs_task_definition" "task" {
 
   execution_role_arn = aws_iam_role.ecs_instance_role.arn
 
-  task_role_arn = aws_iam_role.ecs_task_role.arn
+  task_role_arn = aws_iam_role.ecs_instance_role.arn
 }
 
 resource "aws_ecs_service" "ecs_service" {

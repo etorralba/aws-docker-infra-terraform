@@ -35,7 +35,7 @@ resource "aws_lb_target_group" "app_tg" {
   vpc_id   = data.terraform_remote_state.network.outputs.vpc_id
 
   health_check {
-    path                = "/index.html"
+    path                = "/"
     interval            = 30        # Time between each health check (in seconds)
     timeout             = 15        # Time before marking a health check as failed (in seconds)
     healthy_threshold   = 2         # Number of successful health checks before considering healthy
