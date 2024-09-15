@@ -102,6 +102,51 @@ resource "aws_iam_role_policy_attachment" "ecs_cloudwatch_policy" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
 
+resource "aws_iam_role_policy" "ecs_secrets_policy" {
+  name = "ecs-secrets-policy"
+  role = aws_iam_role.ecs_instance_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = [
+          data.terraform_remote_state.database.outputs.db_secret_arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ecs_rds_policy" {
+  name = "ecs-rds-policy"
+  role = aws_iam_role.ecs_instance_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:ModifyDBInstance",
+          "rds:StartDBInstance",
+          "rds:StopDBInstance",
+          "rds:CreateDBSnapshot",
+          "rds:DeleteDBSnapshot"
+        ],
+        Resource = [
+          data.terraform_remote_state.database.outputs.db_instance_arn
+        ]
+      }
+    ]
+  })
+}
+
 # Security Group for ECS EC2 Instances
 resource "aws_security_group" "ecs_instance_sg" {
   name   = "${var.main_organization}-ecs-instance-sg"
@@ -114,13 +159,13 @@ resource "aws_security_group" "ecs_instance_sg" {
     security_groups = [aws_security_group.alb_sg.id] # Allow traffic from ALB SG
   }
 
-  # # Outbound rule to allow ECS to connect to RDS on port 5432
-  # egress {
-  #   from_port   = 5432
-  #   to_port     = 5432
-  #   protocol    = "tcp"
-  #   security_groups = [aws_security_group.rds_sg.id]  # Reference the RDS security group
-  # }
+  # Outbound rule to allow ECS to connect to RDS on port 5432
+  egress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [data.terraform_remote_state.database.outputs.db_security_group_id] # Reference the RDS security group
+  }
 
   egress {
     from_port   = 0
@@ -133,4 +178,17 @@ resource "aws_security_group" "ecs_instance_sg" {
     Name         = "${var.main_organization}-ecs-instance-sg"
     Organization = var.main_organization
   }
+}
+
+data "aws_security_group" "existing_rds_sg" {
+  id = data.terraform_remote_state.database.outputs.db_security_group_id
+}
+
+resource "aws_security_group_rule" "rds_to_ecs" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  security_group_id        = data.aws_security_group.existing_rds_sg.id
+  source_security_group_id = aws_security_group.ecs_instance_sg.id # Reference the ECS security group
 }

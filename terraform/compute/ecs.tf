@@ -30,6 +30,28 @@ resource "aws_ecs_task_definition" "task" {
       containerPort = local.container_port
       hostPort      = 80
     }]
+    secrets = [
+      {
+        name      = "DB_HOST"
+        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:host"
+      },
+      {
+        name      = "DB_PORT"
+        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:port"
+      },
+      {
+        name      = "DB_NAME"
+        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:dbname"
+      },
+      {
+        name      = "DB_USER"
+        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:username"
+      },
+      {
+        name      = "DB_PASSWORD"
+        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:password"
+      }
+    ]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -38,6 +60,7 @@ resource "aws_ecs_task_definition" "task" {
         awslogs-stream-prefix = "ecs"
       }
     }
+  
   }])
 
   tags = {

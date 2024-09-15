@@ -9,6 +9,17 @@ data "terraform_remote_state" "network" {
   }
 }
 
+// Database state
+data "terraform_remote_state" "database" {
+  backend = "s3"
+
+  config = {
+    bucket = "${var.account_id}-tf-state"
+    key    = "terraform.${var.main_organization}_database.tfstate"
+    region = var.region
+  }
+}
+
 # Data source for ECS-optimized AMI
 data "aws_ami" "ecs_optimized" {
   filter {
