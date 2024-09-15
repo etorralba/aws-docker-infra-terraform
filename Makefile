@@ -38,7 +38,7 @@ docker-build:
 
 # Run Docker container
 docker-run:
-	docker run -d -p 8080:80 java-dotnet-apache:${IMAGE_VERSION}
+	docker run -d -p 80:80 java-dotnet-apache:${IMAGE_VERSION}
 
 # Stop Docker container
 docker-stop:
@@ -51,6 +51,13 @@ docker-clean:
 
 docker-prune:
 	docker system prune --all --volumes --force
+
+docker-login:
+	aws ecr get-login-password -profile ${AWS_PROFILE} --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+docker-push:
+	docker tag java-dotnet-apache:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-repo:${IMAGE_VERSION}
+	docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-repo:latest
 
 build-java-netcore:
 	docker-compose up build-java-netcore
@@ -78,3 +85,7 @@ terraform-output:
 
 terraform-destroy:
 	@make run script="destroy.sh ${LAYER} ${ORGANIZATION}"
+
+terraform-fmt:
+	@make run script="format.sh"
+
