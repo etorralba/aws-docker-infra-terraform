@@ -60,7 +60,7 @@ resource "aws_ecs_task_definition" "task" {
         awslogs-stream-prefix = "ecs"
       }
     }
-  
+
   }])
 
   tags = {
