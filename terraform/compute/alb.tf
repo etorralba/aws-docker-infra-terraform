@@ -1,3 +1,13 @@
+# Create an Application Load Balancer
+resource "aws_lb" "app_lb" {
+  name               = "${var.main_organization}-app-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.terraform_remote_state.network.outputs.public_subnet_ids
+}
+
+# Create a Security Group for the Application Load Balancer
 resource "aws_security_group" "alb_sg" {
   vpc_id = data.terraform_remote_state.network.outputs.vpc_id
 
@@ -5,29 +15,30 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # Allow HTTP traffic
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Allow HTTPS traffic
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # Allow all outbound traffic
   }
 
   tags = {
-    Name = "${var.main_organization}-alb-sg"
+    Name         = "${var.main_organization}-alb-sg"
+    Organization = var.main_organization
   }
 }
 
-resource "aws_lb" "app_lb" {
-  name               = "${var.main_organization}-app-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = [data.terraform_remote_state.network.outputs.public_subnet_a_id, data.terraform_remote_state.network.outputs.public_subnet_b_id, ]
-}
-
+# Create a Target Group for the Application Load Balancer
 resource "aws_lb_target_group" "app_tg" {
   name     = "${var.main_organization}-app-tg"
   port     = 80
@@ -36,11 +47,15 @@ resource "aws_lb_target_group" "app_tg" {
 
   health_check {
     path                = "/"
-    interval            = 30        # Time between each health check (in seconds)
-    timeout             = 15        # Time before marking a health check as failed (in seconds)
-    healthy_threshold   = 2         # Number of successful health checks before considering healthy
-    unhealthy_threshold = 3         # Number of failed health checks before considering unhealthy
-    matcher             = "200-299" # HTTP status codes to consider healthy
+    interval            = 30
+    timeout             = 15
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    matcher             = "200-299"
+  }
+
+  tags = {
+    Organization = var.main_organization
   }
 }
 
