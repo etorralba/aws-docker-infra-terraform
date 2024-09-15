@@ -1,3 +1,8 @@
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# Create VPC
 resource "aws_vpc" "main_vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
@@ -6,36 +11,27 @@ resource "aws_vpc" "main_vpc" {
   }
 }
 
-# Create Public Subnet
-resource "aws_subnet" "public_subnet_a" {
+# Create 3 Public Subnets, one in each of the first 3 AZs
+resource "aws_subnet" "public_subnet" {
+  count                   = 3
   vpc_id                  = aws_vpc.main_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.region}a"
+  cidr_block              = cidrsubnet("10.0.0.0/16", 8, count.index)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
   tags = {
-    Name         = "${var.main_organization}-public-subnet-a"
+    Name         = "${var.main_organization}-public-subnet-${count.index}"
     Organization = var.main_organization
   }
 }
 
-# Create Public Subnet
-resource "aws_subnet" "public_subnet_b" {
-  vpc_id                  = aws_vpc.main_vpc.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "${var.region}b"
-  map_public_ip_on_launch = true
-  tags = {
-    Name         = "${var.main_organization}-public-subnet-b"
-    Organization = var.main_organization
-  }
-}
-
-# Create Private Subnet
+# Create 3 Private Subnets, one in each of the first 3 AZs
 resource "aws_subnet" "private_subnet" {
-  vpc_id     = aws_vpc.main_vpc.id
-  cidr_block = "10.0.3.0/24"
+  count             = 3
+  vpc_id            = aws_vpc.main_vpc.id
+  cidr_block        = cidrsubnet("10.0.0.0/16", 8, count.index + 3)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
   tags = {
-    Name         = "${var.main_organization}-private-subnet"
+    Name         = "${var.main_organization}-private-subnet-${count.index}"
     Organization = var.main_organization
   }
 }
@@ -64,47 +60,51 @@ resource "aws_route_table" "public_rt" {
   }
 }
 
-# Associate Public Subnet with Route Table
-resource "aws_route_table_association" "public_association_a" {
-  subnet_id      = aws_subnet.public_subnet_a.id
+# Associate Public Subnets with Route Table
+resource "aws_route_table_association" "public_association" {
+  count          = 3
+  subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_rt.id
 }
 
-resource "aws_route_table_association" "public_association_b" {
-  subnet_id      = aws_subnet.public_subnet_b.id
-  route_table_id = aws_route_table.public_rt.id
-}
-
+# Create NAT Gateway
 resource "aws_eip" "nat_eip" {
-  associate_with_private_ip = true
-}
-
-resource "aws_nat_gateway" "nat_gateway" {
-  allocation_id = aws_eip.nat_eip.id
-  subnet_id     = aws_subnet.public_subnet_a.id
+  count = 3
   tags = {
-    Name         = "${var.main_organization}-nat-gateway"
+    Name         = "${var.main_organization}-nat-eip-${count.index}"
     Organization = var.main_organization
-
   }
 }
 
+resource "aws_nat_gateway" "nat_gateway" {
+  count         = 3
+  allocation_id = aws_eip.nat_eip[count.index].id
+  subnet_id     = aws_subnet.public_subnet[count.index].id
+  tags = {
+    Name         = "${var.main_organization}-nat-gateway-${count.index}"
+    Organization = var.main_organization
+  }
+}
+
+# Route Table for Private Subnets
 resource "aws_route_table" "private_rt" {
+  count  = 3
   vpc_id = aws_vpc.main_vpc.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_gateway.id
+    nat_gateway_id = aws_nat_gateway.nat_gateway[count.index].id
   }
 
   tags = {
-    Name         = "${var.main_organization}-private-rt"
+    Name         = "${var.main_organization}-private-rt-${count.index}"
     Organization = var.main_organization
-
   }
 }
 
+# Associate Private Subnets with Route Table
 resource "aws_route_table_association" "private_association" {
-  subnet_id      = aws_subnet.private_subnet.id
-  route_table_id = aws_route_table.private_rt.id
+  count          = 3
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = aws_route_table.private_rt[count.index].id
 }

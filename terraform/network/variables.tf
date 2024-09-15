@@ -2,7 +2,6 @@ variable "aws_profile" {
   description = "The AWS profile to use for SSH connections"
   type        = string
   default     = "default"
-
 }
 
 variable "region" {
@@ -15,5 +14,4 @@ variable "main_organization" {
   description = "The main organization name"
   type        = string
   default     = "default"
-
 }
