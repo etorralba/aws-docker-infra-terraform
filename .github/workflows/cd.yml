@@ -2,14 +2,61 @@ name: CD Workflow
 
 on:
   workflow_dispatch:
-
+  workflow_run:
+    workflows: ["CI Workflow"]  # The name of the CI workflow
+    types:
+      - completed
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ORGANIZATION: ${{ secrets.ORGANIZATION }}
+      CLUSTER_NAME: ${{ env.ORGANIZATION}}-ecs-cluster
+      SERVICE_NAME: ${{ env.ORGANIZATION}}-service
+      IMAGE_VERSION: latest  # Set this dynamically based on your strategy
+      AWS_PAGER: ""
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip curl
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
 
-      - name: Run deployment
-        run: echo "Deploying the application..."
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+      - name: Stop Old Task
+        run: |
+          # Get the running tasks for the service
+          TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.CLUSTER_NAME }} --service-name ${{ env.SERVICE_NAME }} --desired-status RUNNING --query 'taskArns[0]' --output text)
+
+          if [ "$TASK_ARN" != "None" ]; then
+            echo "Stopping old task $TASK_ARN"
+            aws ecs stop-task --cluster ${{ env.CLUSTER_NAME }} --task $TASK_ARN
+          else
+            echo "No running tasks to stop."
+          fi
+
+      - name: Force ECS Service to Update
+        run: |
+          # Force ECS service to pull the new image and redeploy
+          aws ecs update-service --cluster ${{ env.CLUSTER_NAME }} --service ${{ env.SERVICE_NAME }} --force-new-deployment

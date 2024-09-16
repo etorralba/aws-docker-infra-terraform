@@ -105,3 +105,6 @@ act-destroy-infra:
 
 act-ci:
 	act -j build_and_push_docker --env-file .secrets
+
+act-cd:
+	act -j deploy --env-file .secrets
