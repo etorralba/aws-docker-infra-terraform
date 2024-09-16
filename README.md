@@ -8,8 +8,9 @@ AWS infrastructure project using Terraform and Docker. Includes a Linux-based co
 - Docker
 - Docker Compose
 - Terraform
+- (Act)[https://github.com/nektos/act]
 
-## Setup
+## Setup and Manual Deployment
 1. Clone the repository
 
 2. Create a `.env` file in the root directory with the following environment variables:
@@ -64,6 +65,30 @@ _Note: The `network` layer will create the VPC, subnets, route tables, internet 
 
 7. Destroy the infrastructure
 - Run `make terraform-destroy` to destroy the infrastructure, remember to destroy the layers in the reverse order of deployment (compute, database, network)
+
+## Run with pipeline
+1. Ensure Act is installed
+2. Create the `.secrets` file with the necessary environment variables
+    ```
+    AWS_ACCOUNT_ID=1234567890
+    AWS_REGION=us-east-1
+    AWS_SECRET_ACCESS_KEY=**********************************
+    AWS_ACCESS_KEY_ID=**************
+    DB_PASSWORD=password
+    DB_USERNAME=useradmin
+    ORGANIZATION=arroyo
+    ```
+__Also create these secrets in the GitHub repository settings: `AWS_ACCOUNT_ID`, `AWS_REGION`, `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, `DB_PASSWORD`, `DB_USERNAME`, `ORGANIZATION`__
+
+3. Run `make act-infra` to run the pipeline
+4. Push the Docker image to ECR
+- Run `aws ecr get-login-password -profile ${AWS_PROFILE} --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com` to authenticate the Docker client to your ECR registry
+
+- Run `make docker-push` to push the Docker image to the ECR registry - It assumes the ECR repository is named `${ORGANIZATION}-repo`
+
+5. Run `make act-destroy-infra` to destroy the infrastructure
+
+_Note: The pipeline can be triggered manually on GitHub_
 
 ## Docker Image
 
