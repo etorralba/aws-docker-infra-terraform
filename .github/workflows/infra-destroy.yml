@@ -1,15 +1,11 @@
 name: Destroy Infrastructure
 
 on:
-  workflow_dispatch:  
+  workflow_dispatch:
 
 jobs:
   destroy_infrastructure:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        layer: [network, database, compute]
 
     env:  
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -28,7 +24,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}     
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }} 
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}  
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install dependencies
@@ -44,60 +40,57 @@ jobs:
       - name: Verify Terraform Installation
         run: terraform --version
 
-      - name: Run Terraform Init for ${{ matrix.layer }}
+      - name: Run Terraform Destroy for all layers sequentially
         run: |
-          cd terraform/${{ matrix.layer }}
-          terraform init \
-          -reconfigure \
-          -input=false \
-          -backend=true \
-          -backend-config="bucket=${AWS_ACCOUNT_ID}-tf-state" \
-          -backend-config="region=${AWS_REGION}" \
-          -backend-config="key=terraform.${ORGANIZATION}_${{ matrix.layer }}.tfstate" \
-          -backend-config="encrypt=true" \
-          -backend-config="dynamodb_table=${AWS_ACCOUNT_ID}-tf-locks"
+          # Define the layers in the correct order for destruction
+          LAYERS=("compute" "database" "network")
 
-      - name: Run Terraform Destroy Script for ${{ matrix.layer }}
-        run: |
-          cd terraform/${{ matrix.layer }}
-          if [[ "${{ matrix.layer }}" == "network" ]]; then
+          for LAYER in "${LAYERS[@]}"; do
+            echo "Destroying layer: $LAYER"
 
-            echo "Destroying ${{ matrix.layer }} layer..."
-            terraform destroy -auto-approve \
+            cd terraform/$LAYER
+
+            echo "Initializing Terraform for $LAYER layer..."
+            terraform init \
+              -reconfigure \
               -input=false \
-              -lock=true \
-              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-              -var "region=${AWS_REGION}" \
-              -var "main_organization=${ORGANIZATION}"
+              -backend=true \
+              -backend-config="bucket=${AWS_ACCOUNT_ID}-tf-state" \
+              -backend-config="region=${AWS_REGION}" \
+              -backend-config="key=terraform.${ORGANIZATION}_${LAYER}.tfstate" \
+              -backend-config="encrypt=true" \
+              -backend-config="dynamodb_table=${AWS_ACCOUNT_ID}-tf-locks"
 
-          elif [[ "${{ matrix.layer }}" == "database" ]]; then
+            echo "Destroying Terraform resources for $LAYER layer..."
+            if [[ "$LAYER" == "network" ]]; then
+              terraform destroy -auto-approve \
+                -input=false \
+                -lock=true \
+                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+                -var "region=${AWS_REGION}" \
+                -var "main_organization=${ORGANIZATION}"
+            elif [[ "$LAYER" == "database" ]]; then
+              terraform destroy -auto-approve \
+                -input=false \
+                -lock=true \
+                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+                -var "region=${AWS_REGION}" \
+                -var "account_id=${AWS_ACCOUNT_ID}" \
+                -var "db_username=${DB_USERNAME}" \
+                -var "db_password=${DB_PASSWORD}" \
+                -var "main_organization=${ORGANIZATION}"
+            elif [[ "$LAYER" == "compute" ]]; then
+              terraform destroy -auto-approve \
+                -input=false \
+                -lock=true \
+                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+                -var "region=${AWS_REGION}" \
+                -var "account_id=${AWS_ACCOUNT_ID}" \
+                -var "main_organization=${ORGANIZATION}"
+            fi
 
-            echo "Destroying ${{ matrix.layer }} layer..."
-            terraform destroy -auto-approve \
-              -input=false \
-              -lock=true \
-              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-              -var "region=${AWS_REGION}" \
-              -var "account_id=${AWS_ACCOUNT_ID}" \
-              -var "db_username=${DB_USERNAME}" \
-              -var "db_password=${DB_PASSWORD}" \
-              -var "main_organization=${ORGANIZATION}"
-
-          elif [[ "${{ matrix.layer }}" == "compute" ]]; then
-
-            echo "Destroying ${{ matrix.layer }} layer..."
-            terraform destroy -auto-approve \
-              -input=false \
-              -lock=true \
-              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-              -var "region=${AWS_REGION}" \
-              -var "account_id=${AWS_ACCOUNT_ID}" \
-              -var "main_organization=${ORGANIZATION}"
-
-          else
-            echo "Unknown layer: ${{ matrix.layer }}"
-
-          fi
+            cd -  # Return to the previous directory
+          done

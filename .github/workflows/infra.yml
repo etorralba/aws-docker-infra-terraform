@@ -7,10 +7,6 @@ jobs:
   deploy_infrastructure:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        layer: [compute, database, network]
-
     env:  
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -44,59 +40,57 @@ jobs:
       - name: Verify Terraform Installation
         run: terraform --version
 
-      - name: Run Terraform Init for ${{ matrix.layer }}
+      - name: Run Terraform for all layers sequentially
         run: |
-          cd terraform/${{ matrix.layer }}
-          terraform init \
-          -reconfigure \
-          -input=false \
-          -backend=true \
-          -backend-config="bucket=${AWS_ACCOUNT_ID}-tf-state" \
-          -backend-config="region=${AWS_REGION}" \
-          -backend-config="key=terraform.${ORGANIZATION}_${{ matrix.layer }}.tfstate" \
-          -backend-config="encrypt=true" \
-          -backend-config="dynamodb_table=${AWS_ACCOUNT_ID}-tf-locks"
+          # Define the layers in the correct order
+          LAYERS=("network" "database" "compute")
 
-      - name: Run Terraform Apply Script for ${{ matrix.layer }}
-        run: |
-          cd terraform/${{ matrix.layer }}
-          if [[ "${{ matrix.layer }}" == "network" ]]; then
+          for LAYER in "${LAYERS[@]}"; do
+            echo "Processing layer: $LAYER"
 
-            echo "Applying ${{ matrix.layer }} layer..."
-            terraform apply -auto-approve \
+            cd terraform/$LAYER
+
+            echo "Initializing Terraform for $LAYER layer..."
+            terraform init \
+              -reconfigure \
               -input=false \
-              -lock=true \
-              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-              -var "region=${AWS_REGION}" \
-              -var "main_organization=${ORGANIZATION}"
+              -backend=true \
+              -backend-config="bucket=${AWS_ACCOUNT_ID}-tf-state" \
+              -backend-config="region=${AWS_REGION}" \
+              -backend-config="key=terraform.${ORGANIZATION}_${LAYER}.tfstate" \
+              -backend-config="encrypt=true" \
+              -backend-config="dynamodb_table=${AWS_ACCOUNT_ID}-tf-locks"
 
-          elif [[ "${{ matrix.layer }}" == "database" ]]; then
+            echo "Applying Terraform for $LAYER layer..."
+            if [[ "$LAYER" == "network" ]]; then
+              terraform apply -auto-approve \
+                -input=false \
+                -lock=true \
+                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+                -var "region=${AWS_REGION}" \
+                -var "main_organization=${ORGANIZATION}"
+            elif [[ "$LAYER" == "database" ]]; then
+              terraform apply -auto-approve \
+                -input=false \
+                -lock=true \
+                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+                -var "region=${AWS_REGION}" \
+                -var "account_id=${AWS_ACCOUNT_ID}" \
+                -var "db_username=${DB_USERNAME}" \
+                -var "db_password=${DB_PASSWORD}" \
+                -var "main_organization=${ORGANIZATION}"
+            elif [[ "$LAYER" == "compute" ]]; then
+              terraform apply -auto-approve \
+                -input=false \
+                -lock=true \
+                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+                -var "region=${AWS_REGION}" \
+                -var "account_id=${AWS_ACCOUNT_ID}" \
+                -var "main_organization=${ORGANIZATION}"
+            fi
 
-            echo "Applying ${{ matrix.layer }} layer..."
-            terraform apply -auto-approve \
-              -input=false \
-              -lock=true \
-              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-              -var "region=${AWS_REGION}" \
-              -var "account_id=${AWS_ACCOUNT_ID}" \
-              -var "db_username=${DB_USERNAME}" \
-              -var "db_password=${DB_PASSWORD}" \
-              -var "main_organization=${ORGANIZATION}"
-
-          elif [[ "${{ matrix.layer }}" == "compute" ]]; then
-
-            echo "Applying ${{ matrix.layer }} layer..."
-            terraform apply -auto-approve \
-              -input=false \
-              -lock=true \
-              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-              -var "region=${AWS_REGION}" \
-              -var "account_id=${AWS_ACCOUNT_ID}" \
-              -var "main_organization=${ORGANIZATION}"
-
-          else
-            echo "Unknown layer: ${{ matrix.layer }}"
-          fi
+            cd -  # Return to the previous directory
+          done
