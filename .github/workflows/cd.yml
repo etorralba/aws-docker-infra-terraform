@@ -46,10 +46,10 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
-      - name: Stop Old Task
+      - name: Stop Old Task - Dev
         run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-dev-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-dev-service
           
           TASK_ARN=$(aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --desired-status RUNNING --query 'taskArns[0]' --output text)
 
@@ -60,9 +60,30 @@ jobs:
             echo "No running tasks to stop."
           fi
 
-      - name: Force ECS Service to Update
+      - name: Force ECS Service to Update - Dev
         run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-dev-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-dev-service
+          
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
+      
+      - name: Stop Old Task - Prod
+        run: |
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-prod-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-prod-service
+          
+          TASK_ARN=$(aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --desired-status RUNNING --query 'taskArns[0]' --output text)
+
+          if [ "$TASK_ARN" != "None" ]; then
+            echo "Stopping old task $TASK_ARN"
+            aws ecs stop-task --cluster $CLUSTER_NAME --task $TASK_ARN
+          else
+            echo "No running tasks to stop."
+          fi
+
+      - name: Force ECS Service to Update - Prod
+        run: |
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-prod-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-prod-service
           
           aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment

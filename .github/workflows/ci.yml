@@ -47,16 +47,30 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
-      - name: Build Docker image
+      - name: Build Docker image - Dev
         run: |
           docker build . -t java-dotnet-apache:${{ env.IMAGE_VERSION }}
 
-      - name: Tag Docker image
+      - name: Tag Docker image - Dev
         run: |
-          docker tag java-dotnet-apache:${{ env.IMAGE_VERSION }} ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-repo:${{ env.IMAGE_VERSION }}
-          docker tag java-dotnet-apache:${{ env.IMAGE_VERSION }} ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-repo:latest
+          docker tag java-dotnet-apache:${{ env.IMAGE_VERSION }} ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-dev-repo:${{ env.IMAGE_VERSION }}
+          docker tag java-dotnet-apache:${{ env.IMAGE_VERSION }} ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-dev-repo:${{ env.IMAGE_VERSION }}
 
-      - name: Push Docker image to ECR
+      - name: Push Docker image to ECR - Dev
         run: |
-          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-repo:${{ env.IMAGE_VERSION }}
-          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-repo:latest
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-dev-repo:${{ env.IMAGE_VERSION }}
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-dev-repo:${{ env.IMAGE_VERSION }}
+
+      - name: Build Docker image - Prod
+        run: |
+          docker build . -t java-dotnet-apache:${{ env.IMAGE_VERSION }}
+
+      - name: Tag Docker image - Prod
+        run: |
+          docker tag java-dotnet-apache:${{ env.IMAGE_VERSION }} ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-prod-repo:${{ env.IMAGE_VERSION }}
+          docker tag java-dotnet-apache:${{ env.IMAGE_VERSION }} ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-prod-repo:${{ env.IMAGE_VERSION }}
+
+      - name: Push Docker image to ECR - Prod
+        run: |
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-prod-repo:${{ env.IMAGE_VERSION }}
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ORGANIZATION }}-prod-repo:${{ env.IMAGE_VERSION }}

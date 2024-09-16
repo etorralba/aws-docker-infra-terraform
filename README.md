@@ -53,6 +53,7 @@ AWS infrastructure project using Terraform and Docker. Includes a Linux-based co
 _Note: The bootstrap Terraform script will create the S3 bucket and DynamoDB table for the Terraform state. The state of this layer will be managed locally._
 
 5. Deploy the infrastructure
+- Create the  `terraform.tfvars` file in the selected layer directory with the necessary variables
 - change the `LAYER` variable in the `.env` file to `network`, `compute` or `database`
 - Run make terraform-plan - It will create a plan for the selected layer
 - Run make terraform-apply - It will apply the plan for the selected layer

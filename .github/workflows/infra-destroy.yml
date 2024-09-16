@@ -6,6 +6,9 @@ on:
 jobs:
   destroy_infrastructure:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, prod]
 
     env:  
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -15,6 +18,7 @@ jobs:
       DB_USERNAME: ${{ secrets.DB_USERNAME }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       ORGANIZATION: ${{ secrets.ORGANIZATION }}
+      AWS_PAGER: ""
 
     steps:
       - name: Checkout code
@@ -57,7 +61,7 @@ jobs:
           LAYERS=("compute" "database" "network")
 
           for LAYER in "${LAYERS[@]}"; do
-            echo "Destroying layer: $LAYER"
+            echo "Destroying layer: $LAYER for environment: ${{ matrix.environment }}"
 
             cd terraform/$LAYER
 
@@ -80,8 +84,10 @@ jobs:
                 -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
                 -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
                 -var "region=${AWS_REGION}" \
-                -var "main_organization=${ORGANIZATION}"
+                -var "main_organization=${ORGANIZATION}" \
+                -var "environment=${{ matrix.environment }}"
             elif [[ "$LAYER" == "database" ]]; then
+              terraform workspace select "${{ matrix.environment }}" || terraform workspace new "${{ matrix.environment }}"
               terraform destroy -auto-approve \
                 -input=false \
                 -lock=true \
@@ -91,23 +97,31 @@ jobs:
                 -var "account_id=${AWS_ACCOUNT_ID}" \
                 -var "db_username=${DB_USERNAME}" \
                 -var "db_password=${DB_PASSWORD}" \
-                -var "main_organization=${ORGANIZATION}"
+                -var "main_organization=${ORGANIZATION}" \
+                -var "environment=${{ matrix.environment }}"
             elif [[ "$LAYER" == "compute" ]]; then
-              List all ECR repositories
+              # List all ECR repositories
               REPOSITORIES=$(aws ecr describe-repositories --query "repositories[*].repositoryName" --output text)
+
               
-              for REPO in $REPOSITORIES; do
-                echo "Deleting all images from repository: $REPO"
-                # Get image IDs for all images in the repository
-                IMAGE_IDS=$(aws ecr list-images --repository-name $REPO --query "imageIds[*]" --output json)
-                if [ "$IMAGE_IDS" != "[]" ]; then
-                  # Batch delete the images
-                  aws ecr batch-delete-image --repository-name $REPO --image-ids "$IMAGE_IDS"
-                  echo "Deleted all images from repository: $REPO"
-                else
-                  echo "No images to delete in repository: $REPO"
-                fi
-              done
+              if [ -n "$REPOSITORIES" ]; then
+                for REPO in $REPOSITORIES; do
+                  echo "Deleting all images from repository: $REPO"
+                  # Get image IDs for all images in the repository
+                  IMAGE_IDS=$(aws ecr list-images --repository-name $REPO --query "imageIds[*]" --output json)
+                  if [ "$IMAGE_IDS" != "[]" ]; then
+                    # Batch delete the images
+                    aws ecr batch-delete-image --repository-name $REPO --image-ids "$IMAGE_IDS"
+                    echo "Deleted all images from repository: $REPO"
+                  else
+                    echo "No images to delete in repository: $REPO"
+                  fi
+                done
+              else
+                echo "No repositories found. Skipping image deletion."
+              fi
+
+              terraform workspace select "${{ matrix.environment }}" || terraform workspace new "${{ matrix.environment }}"
 
               terraform destroy -auto-approve \
                 -input=false \
@@ -116,7 +130,8 @@ jobs:
                 -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
                 -var "region=${AWS_REGION}" \
                 -var "account_id=${AWS_ACCOUNT_ID}" \
-                -var "main_organization=${ORGANIZATION}"
+                -var "main_organization=${ORGANIZATION}" \
+                -var "environment=${{ matrix.environment }}"
             fi
 
             cd -  # Return to the previous directory
