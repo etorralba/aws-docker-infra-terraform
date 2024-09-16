@@ -97,3 +97,8 @@ terraform-destroy:
 terraform-fmt:
 	@make run script="format.sh"
 
+act-infra:
+	act -j deploy_infrastructure --env-file .secrets
+
+act-destroy-infra:
+	act -j destroy_infrastructure --env-file .secrets
