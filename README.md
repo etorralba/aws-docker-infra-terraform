@@ -1,6 +1,9 @@
 # aws-docker-infra-terraform
 AWS infrastructure project using Terraform and Docker. Includes a Linux-based compute service (EC2/ECS), RDS PostgreSQL database, SSH security policies, and a Docker image with Git, VS Code, Maven, PostgreSQL, Java JRE, .NET Core SDK, and Apache. 
 
+[![CI Workflow](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/ci.yml)
+[![CD Workflow](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/cd.yml/badge.svg)](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/cd.yml) 
+
 ## Pre-requisites
 - Java JDK 17
 - Maven 3.9.9
