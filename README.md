@@ -1,5 +1,5 @@
 # aws-docker-infra-terraform
-AWS infrastructure project using Terraform and Docker. Includes a Linux-based compute service (EC2/ECS), RDS PostgreSQL database, SSH security policies, and a Docker image with Git, VS Code, Maven, PostgreSQL, Java JRE, .NET Core SDK, and Apache. 
+AWS infrastructure project using Terraform and Docker. Includes a Linux-based compute service (EC2/ECS), RDS PostgreSQL database, Security Groups, and a Docker image with Git, VS Code, Maven, PostgreSQL, Java JRE, .NET Core SDK, and Apache. 
 
 [![CI Workflow](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/ci.yml/badge.svg)](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/ci.yml)
 [![CD Workflow](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/cd.yml/badge.svg)](https://github.com/etorralba/aws-docker-infra-terraform/actions/workflows/cd.yml) 
@@ -111,7 +111,6 @@ State locking prevents concurrent modifications to the state, ensuring that only
 ECS has been selected as the compute service due to its ability to run containerized applications at scale, manage container lifecycle.
 
 RDS PostgreSQL has been selected as the database service due to the ease of setup, management, and scalability. Being an open-source relational database, PostgreSQL is widely used and supported by the community, hence the compatibility with various tools and frameworks. Additionally is cost-effective for small to medium-sized applications.
-
 
 ## Architecture
 ![Architecture](./images/architecture.jpg)
