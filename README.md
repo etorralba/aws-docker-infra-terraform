@@ -89,6 +89,8 @@ _Note: The pipeline can be triggered manually on GitHub_
 5. You can manually run the ci pipeline by running `make act-ci`, this will build and push the Docker image to ECR. 
 _You could also trigger the pipeline manually on GitHub or by pushing a commit to the repository_
 
+6. You can manually run the cd pipeline by running `make act-cd`, this will deploy the infrastructure and run the Docker container. In Github it is triggered by the ci pipeline.
+
 ## Docker Image
 
 The Docker image is based on the `ubuntu:20.04` image and is built with 2 stages: `build-stage` and `runtime-stage`. The `build-stage` installs the necessary tools and dependencies to build the Java and .NET Core applications, while the `runtime-stage` copies the built applications and sets up the Apache server to serve the static content.
@@ -181,6 +183,12 @@ RDS PostgreSQL has been selected as the database service due to the ease of setu
 - `terraform-destroy`: Destroy the selected layer
 - `terraform-output`: Display the output values of the selected layer
 - `terraform-fmt`: Format the Terraform configuration files
+
+### Pipeline Commands
+- `act-infra`: Run the infrastructure pipeline
+- `act-destroy-infra`: Run the destroy infrastructure pipeline
+- `act-ci`: Run the CI pipeline
+- `act-cd`: Run the CD pipeline
 
 ## Folder Structure
 ```
