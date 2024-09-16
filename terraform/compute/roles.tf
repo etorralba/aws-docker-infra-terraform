@@ -46,6 +46,18 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
+resource "aws_iam_role_policy" "ecs_task_rds_policy" {
+  name   = "${var.main_organization}-ecs_task-rds-policy"
+  role   = aws_iam_role.ecs_task_role.name
+  policy = data.aws_iam_policy_document.ecs_rds_policy.json
+}
+
+resource "aws_iam_role_policy" "ecs_task_secret_policy" {
+  name   = "${var.main_organization}-ecs_task-secret-policy"
+  role   = aws_iam_role.ecs_task_role.name
+  policy = data.aws_iam_policy_document.ecs_secret_policy.json
+}
+
 # ECS Task Execution Role
 resource "aws_iam_role" "ecs_task_execution_role" {
   name               = "${var.main_organization}-${var.environment}-ecs-task-execution-role"
