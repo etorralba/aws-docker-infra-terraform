@@ -84,10 +84,10 @@ Using the `docker-compose.yml` file, we can target the `build-stage` to build th
 
 
 ### Database
-- __RDS PostgreSQL__: A managed relational database service that provides PostgreSQL databases. It includes automated backups, software patching, and automatic failover.
+- __RDS PostgreSQL__: A managed relational database service that provides PostgreSQL databases.
 - __Security group__: Acts as a virtual firewall to control inbound and outbound traffic for the RDS instance. Allows inbound traffic on the PostgreSQL port (default 5432) from the compute layer.
-    - RDS security group: Allows inbound traffic on port 5432 EC2 instances in the AutoScaling Group and ECS tasks (set in the compute layer). Allows all outbound traffic.
-- __Secret__: Stores sensitive information such as database credentials securely in AWS Secrets Manager, allowing applications to retrieve them programmatically.
+    - _RDS security group_: Allows inbound traffic on port 5432 EC2 instances in the AutoScaling Group and ECS tasks (set in the compute layer). Allows all outbound traffic.
+- __Secret__: Stores sensitive information such as database credentials securely in AWS Secrets Manager.
     ```
     {
         "username": "******",
@@ -100,7 +100,7 @@ Using the `docker-compose.yml` file, we can target the `build-stage` to build th
 
 ### Compute
 - __ECS Cluster__: A group of EC2 instances managed as a cluster for running containerized applications.
-- __ECS Task Definition__: Defines the containerized application running in the ECS cluster, including the container image, CPU, and memory requirements.
+- __ECS Task Definition__: Defines the containerized application running in the ECS cluster.
 - __ECS Service__: Manages the deployment of the ECS tasks within the ECS cluster, ensuring the correct number of tasks are running, performing rolling updates, and connecting tasks to the Application Load Balancer (ALB).
 - __Auto Scaling Group (ASG)__: Automatically adjusts the number of EC2 instances running in the ECS cluster to meet application demand.
 - __CloudWatch Logs Group__: Stores logs from the ECS tasks and EC2 instances for monitoring and troubleshooting.
