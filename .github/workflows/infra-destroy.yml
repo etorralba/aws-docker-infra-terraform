@@ -60,6 +60,31 @@ jobs:
           chmod +x ./scripts/destroy.sh
           LAYERS=("compute" "database" "network")
           for LAYER in "${LAYERS[@]}"; do
-            echo "Running destroy script for $LAYER"
-            ./scripts/destroy.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }}
+
+            if [[ "$LAYER" == "network" ]]; then
+              ./scripts/destroy.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }} \
+              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+              -var "region=${AWS_REGION}" \
+              -var "main_organization=${ORGANIZATION}" \
+              -var "environment=${{ matrix.environment }}"
+            elif [[ "$LAYER" == "database" ]]; then
+              ./scripts/destroy.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }} \
+              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+              -var "region=${AWS_REGION}" \
+              -var "account_id=${AWS_ACCOUNT_ID}" \
+              -var "db_username=${DB_USERNAME}" \
+              -var "db_password=${DB_PASSWORD}" \
+              -var "main_organization=${ORGANIZATION}" \
+              -var "environment=${{ matrix.environment }}"
+            elif [[ "$LAYER" == "compute" ]]; then
+              ./scripts/destroy.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }} \
+              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+              -var "region=${AWS_REGION}" \
+              -var "account_id=${AWS_ACCOUNT_ID}" \
+              -var "main_organization=${ORGANIZATION}" \
+              -var "environment=${{ matrix.environment }}"
+            fi
           done

@@ -43,63 +43,38 @@ jobs:
       - name: Verify Terraform Installation
         run: terraform --version
 
-      - name: Run Terraform for all layers sequentially
+      - name: Plan and Apply Infrastructure using script
         run: |
-          # Define the layers in the correct order
           LAYERS=("network" "database" "compute")
-
           for LAYER in "${LAYERS[@]}"; do
-            echo "Processing layer: $LAYER for environment: ${{ matrix.environment }}"
 
-            cd terraform/$LAYER
-
-            echo "Initializing Terraform for $LAYER layer..."
-            terraform init \
-              -reconfigure \
-              -input=false \
-              -backend=true \
-              -backend-config="bucket=${AWS_ACCOUNT_ID}-tf-state" \
-              -backend-config="region=${AWS_REGION}" \
-              -backend-config="key=terraform.${ORGANIZATION}_${LAYER}.tfstate" \
-              -backend-config="encrypt=true" \
-              -backend-config="dynamodb_table=${AWS_ACCOUNT_ID}-tf-locks"
-
-            echo "Applying Terraform for $LAYER layer..."
             if [[ "$LAYER" == "network" ]]; then
-              terraform workspace select "default" || terraform workspace new "default"
-              terraform apply -auto-approve \
-                -input=false \
-                -lock=true \
-                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-                -var "region=${AWS_REGION}" \
-                -var "main_organization=${ORGANIZATION}" \
-                -var "environment=${{ matrix.environment }}"
+              ./scripts/plan.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }} \
+              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+              -var "region=${AWS_REGION}" \
+              -var "main_organization=${ORGANIZATION}" \
+              -var "environment=${{ matrix.environment }}"
             elif [[ "$LAYER" == "database" ]]; then
-              terraform workspace select "${{ matrix.environment }}" || terraform workspace new "${{ matrix.environment }}"
-              terraform apply -auto-approve \
-                -input=false \
-                -lock=true \
-                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-                -var "region=${AWS_REGION}" \
-                -var "account_id=${AWS_ACCOUNT_ID}" \
-                -var "db_username=${DB_USERNAME}" \
-                -var "db_password=${DB_PASSWORD}" \
-                -var "main_organization=${ORGANIZATION}" \
-                -var "environment=${{ matrix.environment }}"
+              ./scripts/plan.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }} \
+              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+              -var "region=${AWS_REGION}" \
+              -var "account_id=${AWS_ACCOUNT_ID}" \
+              -var "db_username=${DB_USERNAME}" \
+              -var "db_password=${DB_PASSWORD}" \
+              -var "main_organization=${ORGANIZATION}" \
+              -var "environment=${{ matrix.environment }}"
             elif [[ "$LAYER" == "compute" ]]; then
-              terraform workspace select "${{ matrix.environment }}" || terraform workspace new "${{ matrix.environment }}"
-              terraform apply -auto-approve \
-                -input=false \
-                -lock=true \
-                -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
-                -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
-                -var "region=${AWS_REGION}" \
-                -var "account_id=${AWS_ACCOUNT_ID}" \
-                -var "main_organization=${ORGANIZATION}" \
-                -var "environment=${{ matrix.environment }}"
+              ./scripts/plan.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }} \
+              -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+              -var "aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+              -var "region=${AWS_REGION}" \
+              -var "account_id=${AWS_ACCOUNT_ID}" \
+              -var "main_organization=${ORGANIZATION}" \
+              -var "environment=${{ matrix.environment }}"
             fi
 
-            cd -  # Return to the previous directory
+            echo "Applying layer: $LAYER for environment: ${{ matrix.environment }}"
+            ./scripts/apply.sh $LAYER ${{ env.ORGANIZATION }} ${{ matrix.environment }}
           done

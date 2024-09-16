@@ -7,10 +7,12 @@ set -o pipefail
 # $1: Layer
 # $2: Organization
 # $3: Environment
+# $@: Additional parameters (e.g., -var options)
 
 LAYER=$1
 ORGANIZATION=$2
 ENVIRONMENT=$3
+shift 3
 
 export AWS_PAGER=""
 
@@ -18,26 +20,21 @@ source ./scripts/init.sh $LAYER $ORGANIZATION
 
 ENVIRONMENT_VARIABLE=$ENVIRONMENT
 
-# if network layer, use the default workspace
 if [ "$LAYER" == "network" ]; then
   ENVIRONMENT="default"
 
-# if compute layer, delete all images from repositories
 elif [ "$LAYER" == "compute" ]; then
-  # Get all repositories that match the environment name
   REPOSITORIES=$(aws ecr describe-repositories --query "repositories[?contains(repositoryName, '$ENVIRONMENT')].repositoryName" --output text)
 
   if [ -n "$REPOSITORIES" ]; then
     for REPO in $REPOSITORIES; do
       echo "Looking for images in repository: $REPO for environment: $ENVIRONMENT"
 
-      # Get image IDs for all images in the repository
       IMAGE_IDS=$(aws ecr list-images --repository-name "$REPO" --query "imageIds[*]" --output json)
 
       if [ "$IMAGE_IDS" != "[]" ]; then
         echo "Deleting images from repository: $REPO"
 
-        # Batch delete the images
         aws ecr batch-delete-image --repository-name "$REPO" --image-ids "$IMAGE_IDS"
 
         echo "Deleted images from repository: $REPO"
@@ -54,9 +51,12 @@ terraform workspace select "${ENVIRONMENT}" || terraform workspace new "${ENVIRO
 
 VAR_FILE="./terraform.tfvars"
 
-terraform destroy \
-  -var-file="${VAR_FILE}" \
-  -input=false \
-  -auto-approve \
-  -var "environment=${ENVIRONMENT_VARIABLE}" \
-  -lock=true | sed -e 's/^/    /g'
+DESTROY_COMMAND="terraform destroy -input=false -auto-approve -var \"environment=${ENVIRONMENT_VARIABLE}\" -lock=true"
+
+if [ -f "$VAR_FILE" ]; then
+  DESTROY_COMMAND="$DESTROY_COMMAND -var-file=\"$VAR_FILE\""
+fi
+
+DESTROY_COMMAND="$DESTROY_COMMAND $@"
+
+eval $DESTROY_COMMAND | sed -e 's/^/    /g'
