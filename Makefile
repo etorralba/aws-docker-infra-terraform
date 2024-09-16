@@ -44,24 +44,26 @@ docker-run:
 docker-stop:
 	docker stop $(shell docker ps -q --filter ancestor=java-dotnet-apache:${IMAGE_VERSION})
 
+# Remove Docker container, image, and volumes
 docker-clean:
 	-docker rm -f $$(docker ps -a -q --filter "ancestor=java-dotnet-apache")
 	-docker rmi -f java-dotnet-apache
 	-docker volume prune --force
 
+# Remove all Docker images
 docker-prune:
 	docker system prune --all --volumes --force
 
-docker-login:
-	aws ecr get-login-password -profile ${AWS_PROFILE} --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-
+# Push Docker image to ECR
 docker-push:
 	docker tag java-dotnet-apache:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-repo:${IMAGE_VERSION}
 	docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-repo:latest
 
+# Build Java and .NET applications using Docker Compose
 build-java-netcore:
 	docker-compose up build-java-netcore
 
+# Run Apache server using Docker Compose
 run-server:
 	docker-compose up run-server
 
@@ -71,21 +73,27 @@ run:
 	AWS_PROFILE=${AWS_PROFILE} \
 	./scripts/$(script)
 
+# Run init.sh script
 terraform-init:
 	@make run script="init.sh ${LAYER} ${ORGANIZATION}"
 
+# Run plan.sh script
 terraform-plan:
 	@make run script="plan.sh ${LAYER} ${ORGANIZATION}"
 
+# Run apply.sh script
 terraform-apply:
 	@make run script="apply.sh ${LAYER} ${ORGANIZATION}"
 
+# Run output.sh script
 terraform-output:
 	@make run script="output.sh ${LAYER} ${ORGANIZATION}"
 
+# Run destroy.sh script
 terraform-destroy:
 	@make run script="destroy.sh ${LAYER} ${ORGANIZATION}"
 
+# Run format.sh script
 terraform-fmt:
 	@make run script="format.sh"
 
