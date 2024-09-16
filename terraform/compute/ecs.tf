@@ -1,7 +1,7 @@
 locals {
   container_name = "apache-server"
   container_port = 80
-  image_name     = "nginx:latest" # "${aws_ecr_repository.repo.repository_url}:latest"
+  image_name     = "${aws_ecr_repository.repo.repository_url}:latest" # "${aws_ecr_repository.repo.repository_url}:latest"
 }
 
 # ECS Cluster
@@ -32,25 +32,9 @@ resource "aws_ecs_task_definition" "task" {
     }]
     secrets = [
       {
-        name      = "DB_HOST"
-        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:host"
+        name      = "DB_SECRET"
+        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_id}"
       },
-      {
-        name      = "DB_PORT"
-        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:port"
-      },
-      {
-        name      = "DB_NAME"
-        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:dbname"
-      },
-      {
-        name      = "DB_USER"
-        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:username"
-      },
-      {
-        name      = "DB_PASSWORD"
-        valueFrom = "${data.terraform_remote_state.database.outputs.db_secret_arn}:password"
-      }
     ]
     logConfiguration = {
       logDriver = "awslogs"

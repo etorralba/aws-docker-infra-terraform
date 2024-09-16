@@ -115,7 +115,7 @@ resource "aws_iam_role_policy" "ecs_secrets_policy" {
           "secretsmanager:GetSecretValue"
         ],
         Resource = [
-          data.terraform_remote_state.database.outputs.db_secret_arn
+          data.terraform_remote_state.database.outputs.db_secret_id
         ]
       }
     ]
