@@ -1,15 +1,15 @@
-name: Deploy Infrastructure
+name: Destroy Infrastructure
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  
 
 jobs:
-  deploy_infrastructure:
+  destroy_infrastructure:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        layer: [compute, database, network]
+        layer: [network, database, compute]
 
     env:  
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -27,8 +27,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}    
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}  
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}     
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }} 
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install dependencies
@@ -57,13 +57,13 @@ jobs:
           -backend-config="encrypt=true" \
           -backend-config="dynamodb_table=${AWS_ACCOUNT_ID}-tf-locks"
 
-      - name: Run Terraform Apply Script for ${{ matrix.layer }}
+      - name: Run Terraform Destroy Script for ${{ matrix.layer }}
         run: |
           cd terraform/${{ matrix.layer }}
           if [[ "${{ matrix.layer }}" == "network" ]]; then
 
-            echo "Applying ${{ matrix.layer }} layer..."
-            terraform apply -auto-approve \
+            echo "Destroying ${{ matrix.layer }} layer..."
+            terraform destroy -auto-approve \
               -input=false \
               -lock=true \
               -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
@@ -73,8 +73,8 @@ jobs:
 
           elif [[ "${{ matrix.layer }}" == "database" ]]; then
 
-            echo "Applying ${{ matrix.layer }} layer..."
-            terraform apply -auto-approve \
+            echo "Destroying ${{ matrix.layer }} layer..."
+            terraform destroy -auto-approve \
               -input=false \
               -lock=true \
               -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
@@ -87,8 +87,8 @@ jobs:
 
           elif [[ "${{ matrix.layer }}" == "compute" ]]; then
 
-            echo "Applying ${{ matrix.layer }} layer..."
-            terraform apply -auto-approve \
+            echo "Destroying ${{ matrix.layer }} layer..."
+            terraform destroy -auto-approve \
               -input=false \
               -lock=true \
               -var "aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
@@ -99,4 +99,5 @@ jobs:
 
           else
             echo "Unknown layer: ${{ matrix.layer }}"
+
           fi
