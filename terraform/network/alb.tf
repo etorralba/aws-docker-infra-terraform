@@ -4,12 +4,12 @@ resource "aws_lb" "app_lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = data.terraform_remote_state.network.outputs.public_subnet_ids
+  subnets            = aws_subnet.public_subnet[*].id
 }
 
 # Create a Security Group for the Application Load Balancer
 resource "aws_security_group" "alb_sg" {
-  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
+  vpc_id = aws_vpc.main_vpc.id
 
   ingress {
     from_port   = 80
@@ -43,7 +43,7 @@ resource "aws_lb_target_group" "app_tg" {
   name     = "${var.main_organization}-app-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = data.terraform_remote_state.network.outputs.vpc_id
+  vpc_id   = aws_vpc.main_vpc.id
 
   health_check {
     path                = "/"

@@ -43,110 +43,6 @@ resource "aws_autoscaling_group" "ecs_asg" {
   vpc_zone_identifier = data.terraform_remote_state.network.outputs.private_subnet_ids
 }
 
-# ECS Instance Profile
-resource "aws_iam_instance_profile" "ecs_instance_profile" {
-  name = "${var.main_organization}-ecs-instance-profile"
-  role = aws_iam_role.ecs_instance_role.name
-
-  tags = {
-    Organization = var.main_organization
-  }
-}
-
-# Auto Scaling Group for ECS EC2 Instances
-resource "aws_iam_role" "ecs_instance_role" {
-  name = "${var.main_organization}-ecs-instance-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      },
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "ecs.amazonaws.com"
-        }
-      },
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Organization = var.main_organization
-  }
-}
-resource "aws_iam_role_policy_attachment" "ecs_instance_policy" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-}
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-# TODO: Attach the specific policy for ECS to write logs to CloudWatch
-resource "aws_iam_role_policy_attachment" "ecs_cloudwatch_policy" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-}
-
-resource "aws_iam_role_policy" "ecs_secrets_policy" {
-  name = "ecs-secrets-policy"
-  role = aws_iam_role.ecs_instance_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ],
-        Resource = [
-          data.terraform_remote_state.database.outputs.db_secret_id
-        ]
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "ecs_rds_policy" {
-  name = "ecs-rds-policy"
-  role = aws_iam_role.ecs_instance_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "rds:DescribeDBInstances",
-          "rds:ModifyDBInstance",
-          "rds:StartDBInstance",
-          "rds:StopDBInstance",
-          "rds:CreateDBSnapshot",
-          "rds:DeleteDBSnapshot"
-        ],
-        Resource = [
-          data.terraform_remote_state.database.outputs.db_instance_arn
-        ]
-      }
-    ]
-  })
-}
-
 # Security Group for ECS EC2 Instances
 resource "aws_security_group" "ecs_instance_sg" {
   name   = "${var.main_organization}-ecs-instance-sg"
@@ -156,7 +52,7 @@ resource "aws_security_group" "ecs_instance_sg" {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id] # Allow traffic from ALB SG
+    security_groups = [data.terraform_remote_state.network.outputs.alb_sg_id] # Allow traffic from ALB SG
   }
 
   # Outbound rule to allow ECS to connect to RDS on port 5432
