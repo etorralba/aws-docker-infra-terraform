@@ -71,6 +71,18 @@ The Docker image is based on the `ubuntu:20.04` image and is built with 2 stages
 
 Using the `docker-compose.yml` file, we can target the `build-stage` to build the Java and .NET Core applications, and the `runtime-stage` to run the Apache server with the built applications.
 
+## Explanation on the Infrastructure
+### State Management
+It has been created a separate Terraform layer for the bootstrap configuration to manage the state of the infrastructure. The state of the bootstrap layer is managed locally, while the state of the network, compute, and database layers is stored in an S3 bucket and locked with a DynamoDB table.
+
+State locking prevents concurrent modifications to the state, ensuring that only one user or automation process can modify the state at a time.
+
+### RDS and ECS
+ECS has been selected as the compute service due to its ability to run containerized applications at scale, manage container lifecycle.
+
+RDS PostgreSQL has been selected as the database service due to the ease of setup, management, and scalability. Being an open-source relational database, PostgreSQL is widely used and supported by the community, hence the compatibility with various tools and frameworks. Additionally is cost-effective for small to medium-sized applications.
+
+
 ## Architecture
 ### Network
 - VPC: A Virtual Private Cloud (VPC) is a logically isolated section of the AWS cloud where you can launch AWS resources in a virtual network that you define. The VPC includes:
