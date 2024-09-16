@@ -27,3 +27,9 @@ variable "main_organization" {
   type        = string
   default     = "default"
 }
+
+variable "environment" {
+  description = "The environment name"
+  type        = string
+  default     = "default"
+}

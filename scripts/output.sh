@@ -6,9 +6,11 @@ set -o pipefail
 # Arguments:
 # $1: Layer
 # $2: Organization
+# $3: Environment
 
 LAYER=$1
 ORGANIZATION=$2
+ENVIRONMENT=$3
 
 source ./scripts/init.sh $LAYER $ORGANIZATION
 

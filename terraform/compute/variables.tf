@@ -34,3 +34,9 @@ variable "account_id" {
   type        = string
   default     = "12345678910"
 }
+
+variable "environment" {
+  description = "The environment name"
+  type        = string
+  default     = "default"
+}

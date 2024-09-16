@@ -56,8 +56,8 @@ docker-prune:
 
 # Push Docker image to ECR
 docker-push:
-	docker tag java-dotnet-apache:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-repo:${IMAGE_VERSION}
-	docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-repo:latest
+	docker tag java-dotnet-apache:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-${ENVIRONMENT}-repo:${IMAGE_VERSION}
+	docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ORGANIZATION}-${ENVIRONMENT}-repo:${IMAGE_VERSION}
 
 # Build Java and .NET applications using Docker Compose
 build-java-netcore:
@@ -79,19 +79,19 @@ terraform-init:
 
 # Run plan.sh script
 terraform-plan:
-	@make run script="plan.sh ${LAYER} ${ORGANIZATION}"
+	@make run script="plan.sh ${LAYER} ${ORGANIZATION} ${ENVIRONMENT}"
 
 # Run apply.sh script
 terraform-apply:
-	@make run script="apply.sh ${LAYER} ${ORGANIZATION}"
+	@make run script="apply.sh ${LAYER} ${ORGANIZATION} ${ENVIRONMENT}"
 
 # Run output.sh script
 terraform-output:
-	@make run script="output.sh ${LAYER} ${ORGANIZATION}"
+	@make run script="output.sh ${LAYER} ${ORGANIZATION} ${ENVIRONMENT}"
 
 # Run destroy.sh script
 terraform-destroy:
-	@make run script="destroy.sh ${LAYER} ${ORGANIZATION}"
+	@make run script="destroy.sh ${LAYER} ${ORGANIZATION} ${ENVIRONMENT}"
 
 # Run format.sh script
 terraform-fmt:

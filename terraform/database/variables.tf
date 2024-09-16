@@ -35,6 +35,12 @@ variable "account_id" {
   default     = "12345678910"
 }
 
+variable "environment" {
+  description = "The environment name"
+  type        = string
+  default     = "default"
+}
+
 variable "db_username" {
   description = "The username for the database"
   type        = string

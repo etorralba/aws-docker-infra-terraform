@@ -15,14 +15,14 @@ resource "aws_db_instance" "main_postgres_db" {
   skip_final_snapshot = true
 
   tags = {
-    Name         = "${var.main_organization}-rds"
+    Name         = "${var.main_organization}-${var.environment}-rds"
     Organization = var.main_organization
   }
 }
 
 # DB subnet group for RDS
 resource "aws_db_subnet_group" "subnet_group" {
-  name       = "${var.main_organization}-db-subnet-group"
+  name       = "${var.main_organization}-${var.environment}-db-subnet-group"
   subnet_ids = data.terraform_remote_state.network.outputs.private_subnet_ids
 
   tags = {
@@ -42,7 +42,7 @@ resource "aws_security_group" "rds_sg" {
   }
 
   tags = {
-    Name         = "${var.main_organization}-rds-sg"
+    Name         = "${var.main_organization}-${var.environment}-rds-sg"
     Organization = var.main_organization
   }
 }
@@ -52,7 +52,7 @@ resource "random_id" "random_prefix" {
 }
 
 resource "aws_secretsmanager_secret" "rds_credentials" {
-  name = "${var.main_organization}-rds-credentials-${random_id.random_prefix.hex}"
+  name = "${var.main_organization}-${var.environment}-rds-credentials-${random_id.random_prefix.hex}"
   tags = {
     Organization = var.main_organization
   }

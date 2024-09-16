@@ -1,6 +1,6 @@
 # ECS Instance Role
 resource "aws_iam_role" "ecs_instance_role" {
-  name               = "${var.main_organization}-ecs-instance-role"
+  name               = "${var.main_organization}-${var.environment}-ecs-instance-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_instance_assume_role.json
   tags = {
     Organization = var.main_organization
@@ -19,7 +19,7 @@ resource "aws_iam_role_policy_attachment" "ecs_cloudwatch_policy" {
 
 # ECS Service Role
 resource "aws_iam_role" "ecs_service_role" {
-  name = "${var.main_organization}-ecs-service-role"
+  name = "${var.main_organization}-${var.environment}-ecs-service-role"
 
   assume_role_policy = data.aws_iam_policy_document.ecs_service_assume_role.json
   tags = {
@@ -32,9 +32,14 @@ resource "aws_iam_role_policy_attachment" "ecs_service_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_service_cloudwatch_policy" {
+  role       = aws_iam_role.ecs_service_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
 # ECS Task Role
 resource "aws_iam_role" "ecs_task_role" {
-  name               = "${var.main_organization}-ecs-task-role"
+  name               = "${var.main_organization}-${var.environment}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
   tags = {
     Organization = var.main_organization
@@ -43,7 +48,7 @@ resource "aws_iam_role" "ecs_task_role" {
 
 # ECS Task Execution Role
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${var.main_organization}-ecs-task-execution-role"
+  name               = "${var.main_organization}-${var.environment}-ecs-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role.json
   tags = {
     Organization = var.main_organization

@@ -1,7 +1,11 @@
+locals {
+  instance_type = "t2.small"
+}
+
 # Create Launch Template for EC2 instances to join the ECS Cluster
 resource "aws_launch_template" "ecs_launch_template" {
-  name          = "${var.main_organization}-ecs-launch-template"
-  instance_type = "t2.medium"
+  name          = "${var.main_organization}-${var.environment}-ecs-launch-template"
+  instance_type = local.instance_type
   image_id      = data.aws_ami.ecs_optimized.id
 
   iam_instance_profile {
@@ -21,8 +25,8 @@ EOF
   )
 
   tags = {
-    Name         = "${var.main_organization}-ecs-instance"
     Organization = var.main_organization
+    Environment  = var.environment
   }
 
   depends_on = [aws_ecs_cluster.ecs_cluster]
@@ -30,7 +34,7 @@ EOF
 
 # Create an Auto Scaling Group for ECS EC2 Instances
 resource "aws_autoscaling_group" "ecs_asg" {
-  name = "${var.main_organization}-ecs-asg"
+  name = "${var.main_organization}-${var.environment}-ecs-asg"
   launch_template {
     id      = aws_launch_template.ecs_launch_template.id
     version = "$Latest"
@@ -45,14 +49,14 @@ resource "aws_autoscaling_group" "ecs_asg" {
 
 # Security Group for ECS EC2 Instances
 resource "aws_security_group" "ecs_instance_sg" {
-  name   = "${var.main_organization}-ecs-instance-sg"
+  name   = "${var.main_organization}-${var.environment}-ecs-instance-sg"
   vpc_id = data.terraform_remote_state.network.outputs.vpc_id
 
   ingress {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [data.terraform_remote_state.network.outputs.alb_sg_id] # Allow traffic from ALB SG
+    security_groups = [data.terraform_remote_state.network.outputs.alb_sg_ids[var.environment]] # Allow traffic from ALB SG
   }
 
   # Outbound rule to allow ECS to connect to RDS on port 5432
@@ -71,8 +75,8 @@ resource "aws_security_group" "ecs_instance_sg" {
   }
 
   tags = {
-    Name         = "${var.main_organization}-ecs-instance-sg"
     Organization = var.main_organization
+    Environment  = var.environment
   }
 }
 

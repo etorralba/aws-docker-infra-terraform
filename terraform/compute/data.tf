@@ -15,7 +15,7 @@ data "terraform_remote_state" "database" {
 
   config = {
     bucket = "${var.account_id}-tf-state"
-    key    = "terraform.${var.main_organization}_database.tfstate"
+    key    = "env:/${var.environment}/terraform.${var.main_organization}_database.tfstate"
     region = var.region
   }
 }

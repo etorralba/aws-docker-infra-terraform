@@ -52,26 +52,26 @@ output "nat_eip_ids" {
   description = "The ID of the Elastic IPs for the NAT Gateways"
 }
 
-# Output the ALB arn
-output "alb_arn" {
-  value       = aws_lb.app_lb.arn
-  description = "The ARN of the Application Load Balancer"
+# ALB Security Group ID
+output "alb_sg_ids" {
+  value = {
+    for env in local.environments : env => aws_security_group.alb_sg[env].id
+  }
+  description = "The ID of the security group for the ALB for each environment"
 }
 
-# Output the ALB DNS name
+# ALB DNS name
 output "alb_dns" {
-  value       = aws_lb.app_lb.dns_name
-  description = "The DNS name of the Application Load Balancer"
+  value = {
+    for env in local.environments : env => aws_lb.app_lb[env].dns_name
+  }
+  description = "The DNS name of the ALB for each environment"
 }
 
-# Output the ALB Security Group ID
-output "alb_sg_id" {
-  value       = aws_security_group.alb_sg.id
-  description = "The ID of the Security Group for the Application Load Balancer"
-}
-
-# Output the Target Group ARN
-output "app_tg_arn" {
-  value       = aws_lb_target_group.app_tg.arn
-  description = "The ARN of the Target Group for the Application Load Balancer"
+# Target Group A
+output "target_group_arns" {
+  value = {
+    for env in local.environments : env => aws_lb_target_group.app_tg[env].arn
+  }
+  description = "The arn of the target group for each environment"
 }
