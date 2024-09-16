@@ -19,6 +19,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
+      - name: Update AWS CLI (if needed)
+        run: |
+          if aws --version; then
+            echo "AWS CLI is already installed. Updating..."
+          else
+            echo "AWS CLI not found. Installing..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+          fi
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -82,6 +93,22 @@ jobs:
                 -var "db_password=${DB_PASSWORD}" \
                 -var "main_organization=${ORGANIZATION}"
             elif [[ "$LAYER" == "compute" ]]; then
+              List all ECR repositories
+              REPOSITORIES=$(aws ecr describe-repositories --query "repositories[*].repositoryName" --output text)
+              
+              for REPO in $REPOSITORIES; do
+                echo "Deleting all images from repository: $REPO"
+                # Get image IDs for all images in the repository
+                IMAGE_IDS=$(aws ecr list-images --repository-name $REPO --query "imageIds[*]" --output json)
+                if [ "$IMAGE_IDS" != "[]" ]; then
+                  # Batch delete the images
+                  aws ecr batch-delete-image --repository-name $REPO --image-ids "$IMAGE_IDS"
+                  echo "Deleted all images from repository: $REPO"
+                else
+                  echo "No images to delete in repository: $REPO"
+                fi
+              done
+
               terraform destroy -auto-approve \
                 -input=false \
                 -lock=true \
