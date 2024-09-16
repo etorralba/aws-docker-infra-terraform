@@ -113,6 +113,8 @@ RDS PostgreSQL has been selected as the database service due to the ease of setu
 
 
 ## Architecture
+![Architecture](./images/architecture.jpg)
+The architecture consists of the following components:
 ### Network
 - VPC: A Virtual Private Cloud (VPC) is a logically isolated section of the AWS cloud where you can launch AWS resources in a virtual network that you define. The VPC includes:
     - __Subnets__: 3 public and 3 private subnets to distribute resources across multiple availability zones.
