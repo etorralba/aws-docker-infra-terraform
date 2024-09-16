@@ -66,10 +66,3 @@ jobs:
           SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
           
           aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
-
-      - name: Wait for Deployment to Complete
-        run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
-          
-          aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME
