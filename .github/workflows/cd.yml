@@ -3,9 +3,10 @@ name: CD Workflow
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["CI Workflow"]  # The name of the CI workflow
+    workflows: ["CI Workflow"]
     types:
       - completed
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,8 +17,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ORGANIZATION: ${{ secrets.ORGANIZATION }}
-      CLUSTER_NAME: ${{ env.ORGANIZATION}}-ecs-cluster
-      SERVICE_NAME: ${{ env.ORGANIZATION}}-service
       IMAGE_VERSION: latest  # Set this dynamically based on your strategy
       AWS_PAGER: ""
 
@@ -49,17 +48,28 @@ jobs:
 
       - name: Stop Old Task
         run: |
-          # Get the running tasks for the service
-          TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.CLUSTER_NAME }} --service-name ${{ env.SERVICE_NAME }} --desired-status RUNNING --query 'taskArns[0]' --output text)
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
+          
+          TASK_ARN=$(aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --desired-status RUNNING --query 'taskArns[0]' --output text)
 
           if [ "$TASK_ARN" != "None" ]; then
             echo "Stopping old task $TASK_ARN"
-            aws ecs stop-task --cluster ${{ env.CLUSTER_NAME }} --task $TASK_ARN
+            aws ecs stop-task --cluster $CLUSTER_NAME --task $TASK_ARN
           else
             echo "No running tasks to stop."
           fi
 
       - name: Force ECS Service to Update
         run: |
-          # Force ECS service to pull the new image and redeploy
-          aws ecs update-service --cluster ${{ env.CLUSTER_NAME }} --service ${{ env.SERVICE_NAME }} --force-new-deployment
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
+          
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
+
+      - name: Wait for Deployment to Complete
+        run: |
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-ecs-cluster
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-service
+          
+          aws ecs wait services-stable --cluster $CLUSTER_NAME --services $SERVICE_NAME
