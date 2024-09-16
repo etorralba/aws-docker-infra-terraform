@@ -17,6 +17,8 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ORGANIZATION: ${{ secrets.ORGANIZATION }}
+      ECS_SERVICE: ecs-service
+      ECS_CLUSTER: ecs-cluster
       IMAGE_VERSION: latest  # Set this dynamically based on your strategy
       AWS_PAGER: ""
 
@@ -48,8 +50,8 @@ jobs:
 
       - name: Stop Old Task - Dev
         run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-dev-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-dev-service
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-dev-${{ env.ECS_CLUSTER }}
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-dev-${{ env.ECS_SERVICE }}
           
           TASK_ARN=$(aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --desired-status RUNNING --query 'taskArns[0]' --output text)
 
@@ -62,15 +64,15 @@ jobs:
 
       - name: Force ECS Service to Update - Dev
         run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-dev-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-dev-service
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-dev-${{ env.ECS_CLUSTER }}
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-dev-${{ env.ECS_SERVICE }}
           
           aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
       
       - name: Stop Old Task - Prod
         run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-prod-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-prod-service
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-prod-${{ env.ECS_CLUSTER }}
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-prod-${{ env.ECS_SERVICE }}
           
           TASK_ARN=$(aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --desired-status RUNNING --query 'taskArns[0]' --output text)
 
@@ -83,7 +85,7 @@ jobs:
 
       - name: Force ECS Service to Update - Prod
         run: |
-          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-prod-ecs-cluster
-          SERVICE_NAME=${{ secrets.ORGANIZATION }}-prod-service
+          CLUSTER_NAME=${{ secrets.ORGANIZATION }}-prod-${{ env.ECS_CLUSTER }}
+          SERVICE_NAME=${{ secrets.ORGANIZATION }}-prod-${{ env.ECS_SERVICE }}
           
           aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
