@@ -11,7 +11,7 @@ AWS infrastructure project using Terraform and Docker. Includes a Linux-based co
 - Docker
 - Docker Compose
 - Terraform
-- (Act)[https://github.com/nektos/act]
+- [Act](https://github.com/nektos/act)
 
 ## Setup and Manual Deployment
 1. Clone the repository
