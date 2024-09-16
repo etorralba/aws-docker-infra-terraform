@@ -2,7 +2,18 @@ variable "aws_profile" {
   description = "The AWS profile to use for SSH connections"
   type        = string
   default     = "default"
+}
 
+variable "aws_access_key_id" {
+  description = "The AWS access key ID"
+  type        = string
+  default     = null
+}
+
+variable "aws_secret_access_key" {
+  description = "The AWS secret access key"
+  type        = string
+  default     = null
 }
 
 variable "region" {

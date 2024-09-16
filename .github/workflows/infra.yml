@@ -1,0 +1,38 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  deploy_infrastructure:
+    runs-on: ubuntu-latest
+
+    env:  
+      IMAGE_VERSION: latest
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: us-east-1
+      AWS_PROFILE: ${{ secrets.AWS_PROFILE }}
+      LAYER: network
+      ORGANIZATION: ${{ secrets.ORGANIZATION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.6
+
+      - name: Verify Terraform Installation
+        run: terraform --version
+
+      - name: Run Terraform Init Script
+        run: |
+          chmod +x ./scripts/init.sh
+          ./scripts/init.sh $LAYER $ORGANIZATION
