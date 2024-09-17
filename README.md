@@ -29,6 +29,7 @@ AWS infrastructure project using Terraform and Docker. Includes a Linux-based co
     # Terraform
     LAYER=network # network, compute
     ORGANIZATION=default
+    ENVIRONMENT=dev # dev, prod, staging
 
     ```
 
@@ -63,9 +64,9 @@ _Note: The `network` layer will create the VPC, subnets, route tables, internet 
 > __The order of deployment is important. The `network` layer must be deployed first, followed by the `database` layer, and finally the `compute` layer.__
 
 6. Push the Docker image to ECR
-- Run `aws ecr get-login-password -profile ${AWS_PROFILE} --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com` to authenticate the Docker client to your ECR registry
+- Run `aws ecr get-login-password --profile ${AWS_PROFILE} --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com` to authenticate the Docker client to your ECR registry
 
-- Run `make docker-push` to push the Docker image to the ECR registry - It assumes the ECR repository is named `${ORGANIZATION}-repo`
+- Run `make docker-push` to push the Docker image to the ECR registry - It assumes the ECR repository is named `${ORGANIZATION}-${ENVIRONMENT}-repo`
 
 7. Destroy the infrastructure
 - Run `make terraform-destroy` to destroy the infrastructure, remember to destroy the layers in the reverse order of deployment (compute, database, network)
